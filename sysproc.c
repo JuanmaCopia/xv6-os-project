@@ -89,3 +89,11 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Print a list with the existent processes,
+// their state and id.
+int
+sys_procstat(void)
+{
+	return procstat();
+}
