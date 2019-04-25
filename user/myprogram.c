@@ -2,17 +2,17 @@
 #include "stat.h"
 #include "user.h"
 
+#define N 10000
+
 int
 main(int argc, char *argv[])
 {
-	int i;
-	int j;
 	int z = 0;
 	printf(1,"Comienzo \n");
 
-	for (i = 0; i < 752150000; i++)
-		for (j = 0; j < 752150000; j++)
-			z = (-i*2) + z + i*2 + 1;
+	for(int i = 0; i < N; i++)
+		for(int j = 0; j < N; j++)
+			z++;
 
 	printf(1,"Fin test, z es: %d \n",z);
 	exit();
