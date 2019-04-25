@@ -97,3 +97,10 @@ sys_procstat(void)
 {
 	return procstat();
 }
+
+int
+sys_plevelstat(void)
+{
+	plevelstat();
+  return 0;
+}

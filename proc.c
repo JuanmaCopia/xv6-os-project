@@ -81,9 +81,9 @@ dequeue(int level)
 
 // Returns true if the level is empty, false otherwise.
 int
-is_empty(struct level l) 
+is_empty(int level) 
 {
-  return !l.head;
+  return !levels[level].head;
 }
 
 // Lowers process's priority if possible.
@@ -421,7 +421,7 @@ scheduler(void)
 
     // Loop until find a non-empty priority level of process.
     acquire(&ptable.lock);
-    while (i < PLEVELS && is_empty(levels[i]))
+    while (i < PLEVELS && is_empty(i))
       i++;
 
     // If its found.
@@ -658,8 +658,44 @@ procstat(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s \n", p->pid, state, p->name);
+    cprintf("%d %s %s   level: %d \n", p->pid, state, p->name, p->priority);
 	}
 	cprintf("\n");
 	return 0;
+}
+
+void
+print_level(int level)
+{
+  if (!is_empty(level)) {
+    cprintf("\nlevel %d: \n",level);
+    struct proc *p = levels[level].head;
+    static char *states[] = {
+    [UNUSED]    "unused",
+    [EMBRYO]    "embryo",
+    [SLEEPING]  "sleep ",
+    [RUNNABLE]  "runble",
+    [RUNNING]   "run   ",
+    [ZOMBIE]    "zombie"
+    };
+    char *state;
+
+    while (p) {
+      if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+        state = states[p->state];
+      else
+        state = "???";
+      cprintf("       > level %d: %d %s %s \n", p->priority, p->pid, state, p->name);
+      p = p->next;
+    }
+  }
+  else
+    cprintf("level %d: EMPTY\n",level);
+}
+
+void
+plevelstat(void)
+{
+  for(int i = 0; i < PLEVELS; i++)
+    print_level(i);
 }
