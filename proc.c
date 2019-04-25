@@ -12,6 +12,14 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+// queue of processes
+struct level {
+  struct proc *head;
+  struct proc *last;
+};
+
+struct level levels[PLEVELS];  // priority levels of processes
+
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -19,6 +27,60 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+
+// Must be called with ptable locked to avoid data corruption
+// between different processes. Enqueues a process at the head 
+// of the corresponding queue that represents a priority level
+// of processes.
+void
+enqueue(struct proc *p)
+{
+  if (!p)
+    panic("enqueue called with null process\n");
+
+  // set process state as RUNNABLE
+  p->state = RUNNABLE;
+
+  // enqueue process at the head of the corresponding level
+  p->next = levels[p->priority].head;
+  p->back = 0;
+  if (levels[p->priority].head)
+    levels[p->priority].head->back = p;
+  else
+    levels[p->priority].last = p;
+  levels[p->priority].head = p;
+}
+
+// Must be called with ptable locked to avoid data corruption
+// between different processes. Dequeues a process at the end
+// of the corresponding queue that represents a priority level
+// of processes.
+struct proc*
+dequeue(int level)
+{
+  struct proc *p = levels[level].last;
+
+  if (!p)
+    panic("dequeue of empty priority level\n");
+
+  if (!p->back) {
+    levels[level].last = 0;
+    levels[level].head = 0;
+  }
+  else {
+    p->back->next = 0;
+    levels[level].last = p->back;
+    p->back = 0;
+  }
+
+  return p;
+}
+
+int
+is_empty(struct level l) 
+{
+  return !l.head;
+}
 
 void
 pinit(void)
@@ -148,7 +210,7 @@ userinit(void)
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
 
-  p->state = RUNNABLE;
+  enqueue(p);
 
   release(&ptable.lock);
 }
@@ -214,7 +276,7 @@ fork(void)
 
   acquire(&ptable.lock);
 
-  np->state = RUNNABLE;
+  enqueue(np);
 
   release(&ptable.lock);
 
@@ -319,22 +381,64 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+// void
+// oldscheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+  
+//   for(;;){
+//     // Enable interrupts on this processor.
+//     sti();
+
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable.lock);
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       if(p->state != RUNNABLE)
+//         continue;
+
+//       // Switch to chosen process.  It is the process's job
+//       // to release ptable.lock and then reacquire it
+//       // before jumping back to us.
+//       c->proc = p;
+//       switchuvm(p);
+//       p->state = RUNNING;
+
+//       swtch(&(c->scheduler), p->context);
+//       switchkvm();
+
+//       // Process is done running for now.
+//       // It should have changed its p->state before coming back.
+//       c->proc = 0;
+//     }
+//     release(&ptable.lock);
+
+//   }
+// }
+
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  int i = 0;
   
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
+    i = 0;
+
+    // loop until find a non-empty priority level of process 
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+    while (i < PLEVELS && is_empty(levels[i]))
+      i++;
+
+    // if found
+    if (i < PLEVELS) {
+      p = dequeue(i);
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -351,7 +455,6 @@ scheduler(void)
       c->proc = 0;
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -386,8 +489,10 @@ void
 yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
-  myproc()->state = RUNNABLE;
+  enqueue(myproc());
+
   sched();
+
   release(&ptable.lock);
 }
 
@@ -461,7 +566,7 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
-      p->state = RUNNABLE;
+      enqueue(p);
 }
 
 // Wake up all processes sleeping on chan.
@@ -487,7 +592,8 @@ kill(int pid)
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
-        p->state = RUNNABLE;
+        enqueue(p);
+        
       release(&ptable.lock);
       return 0;
     }
