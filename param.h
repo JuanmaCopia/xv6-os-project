@@ -10,6 +10,7 @@
 #define MAXOPBLOCKS  10  // max # of blocks any FS op writes
 #define QUANTUM       5  // # of ticks to the current proccess to release the cpu
 #define PLEVELS       4  // amount of priority levels that a process can have
+#define DEFAULTPLEVEL 0  // starting priority level of all processes 
 #define LOGSIZE      (MAXOPBLOCKS*3)  // max data blocks in on-disk log
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       1000  // size of file system in blocks

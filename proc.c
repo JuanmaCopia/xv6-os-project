@@ -12,13 +12,16 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
-// queue of processes
+// Linked list that represents a level of priority and 
+// works like a queue. Head points to the first process 
+// of the list and last points to the last one.
 struct level {
   struct proc *head;
   struct proc *last;
 };
 
-struct level levels[PLEVELS];  // priority levels of processes
+// Priority levels of processes
+struct level levels[PLEVELS];
 
 static struct proc *initproc;
 
@@ -29,19 +32,18 @@ extern void trapret(void);
 static void wakeup1(void *chan);
 
 // Must be called with ptable locked to avoid data corruption
-// between different processes. Enqueues a process at the head 
-// of the corresponding queue that represents a priority level
-// of processes.
+// between different processes. Enqueues a process at its
+// corresponding priority level.
 void
 enqueue(struct proc *p)
 {
   if (!p)
     panic("enqueue called with null process\n");
 
-  // set process state as RUNNABLE
+  // Set process state as RUNNABLE.
   p->state = RUNNABLE;
 
-  // enqueue process at the head of the corresponding level
+  // Enqueue process at the head of the linked list.
   p->next = levels[p->priority].head;
   p->back = 0;
   if (levels[p->priority].head)
@@ -52,17 +54,18 @@ enqueue(struct proc *p)
 }
 
 // Must be called with ptable locked to avoid data corruption
-// between different processes. Dequeues a process at the end
-// of the corresponding queue that represents a priority level
-// of processes.
+// between different processes. Dequeues a process from a given
+// priority level.
 struct proc*
 dequeue(int level)
 {
+  // Get the process to dequeue.
   struct proc *p = levels[level].last;
 
   if (!p)
     panic("dequeue of empty priority level\n");
 
+  // Dequeue the process from the end of the linked list.
   if (!p->back) {
     levels[level].last = 0;
     levels[level].head = 0;
@@ -76,10 +79,27 @@ dequeue(int level)
   return p;
 }
 
+// Returns true if the level is empty, false otherwise.
 int
 is_empty(struct level l) 
 {
   return !l.head;
+}
+
+// Lowers process's priority if possible.
+void
+decrease_priority(struct proc *p) {
+  if (p->priority < PLEVELS - 1) {
+    p->priority++;
+  }
+}
+
+// Increase process's priority if possible.
+void
+increase_priority(struct proc *p) {
+  if (p->priority > 0) {
+    p->priority--;
+  }
 }
 
 void
@@ -88,7 +108,7 @@ pinit(void)
   initlock(&ptable.lock, "ptable");
 }
 
-// Must be called with interrupts disabled
+// Must be called with interrupts disabled.
 int
 cpuid() {
   return mycpu()-cpus;
@@ -115,7 +135,7 @@ mycpu(void)
 }
 
 // Disable interrupts so that we are not rescheduled
-// while reading proc from the cpu structure
+// while reading proc from the cpu structure.
 struct proc*
 myproc(void) {
   struct cpu *c;
@@ -150,6 +170,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  // Set priority level.
+  p->priority = DEFAULTPLEVEL;
 
   release(&ptable.lock);
 
@@ -210,6 +232,7 @@ userinit(void)
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
 
+  // Add process to the priority table.
   enqueue(p);
 
   release(&ptable.lock);
@@ -276,6 +299,7 @@ fork(void)
 
   acquire(&ptable.lock);
 
+  // Add process to the priority table.
   enqueue(np);
 
   release(&ptable.lock);
@@ -381,42 +405,6 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-// void
-// oldscheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-  
-//   for(;;){
-//     // Enable interrupts on this processor.
-//     sti();
-
-//     // Loop over process table looking for process to run.
-//     acquire(&ptable.lock);
-//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-//       if(p->state != RUNNABLE)
-//         continue;
-
-//       // Switch to chosen process.  It is the process's job
-//       // to release ptable.lock and then reacquire it
-//       // before jumping back to us.
-//       c->proc = p;
-//       switchuvm(p);
-//       p->state = RUNNING;
-
-//       swtch(&(c->scheduler), p->context);
-//       switchkvm();
-
-//       // Process is done running for now.
-//       // It should have changed its p->state before coming back.
-//       c->proc = 0;
-//     }
-//     release(&ptable.lock);
-
-//   }
-// }
-
 void
 scheduler(void)
 {
@@ -431,13 +419,14 @@ scheduler(void)
 
     i = 0;
 
-    // loop until find a non-empty priority level of process 
+    // Loop until find a non-empty priority level of process.
     acquire(&ptable.lock);
     while (i < PLEVELS && is_empty(levels[i]))
       i++;
 
-    // if found
+    // If its found.
     if (i < PLEVELS) {
+      // Dequeue the next process from the level.
       p = dequeue(i);
 
       // Switch to chosen process.  It is the process's job
@@ -489,6 +478,11 @@ void
 yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
+
+  // Reset process tick count.
+  myproc()->ticks_count = 0;
+  decrease_priority(myproc());
+  // Add process to the priority table.
   enqueue(myproc());
 
   sched();
@@ -566,6 +560,7 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
+      // Add process to the priority table.
       enqueue(p);
 }
 
@@ -592,6 +587,7 @@ kill(int pid)
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
+        // Add process to the priority table.
         enqueue(p);
         
       release(&ptable.lock);

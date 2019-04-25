@@ -37,6 +37,9 @@ void
 trap(struct trapframe *tf)
 {
   if(tf->trapno == T_SYSCALL){
+    // Increase process priority
+    increase_priority(myproc());
+    
     if(myproc()->killed)
       exit();
     myproc()->tf = tf;
@@ -103,10 +106,8 @@ trap(struct trapframe *tf)
 	// Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER) {
-		if (++myproc()->ticks_count >= QUANTUM) {
-			myproc()->ticks_count = 0;
+		if (++myproc()->ticks_count >= QUANTUM)
 			yield();
-		}
 	}
 
   // Check if the process has been killed since we yielded
