@@ -159,6 +159,12 @@ _forktest: user/forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest user/forktest.o user/ulib.o user/usys.o
 	$(OBJDUMP) -S _forktest > user/forktest.asm
 
+_levelstest: user/levelstest.o $(ULIB)
+	# levelstest has less library code linked in - needs to be small
+	# in order to be able to max out the proc table.
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _levelstest user/levelstest.o user/ulib.o user/usys.o
+	$(OBJDUMP) -S _levelstest > user/levelstest.asm
+
 # ===============================================================================
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -184,6 +190,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_myprogram\
+	_levelstest\
 
 # ================================================================================
 
@@ -256,7 +263,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 EXTRA=\
-	mkfs.c ulib.c user.h cat.c myprogram.c echo.c forktest.c grep.c kill.c\
+	mkfs.c ulib.c user.h cat.c myprogram.c echo.c forktest.c levelstest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\

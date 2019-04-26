@@ -1,3 +1,4 @@
+
 // Test that fork fails gracefully.
 // Tiny executable so that the limit can be filling the proc table.
 
@@ -5,24 +6,12 @@
 #include "stat.h"
 #include "user.h"
 
-#define N  100
-#define M  100000
+#define N  1000
 
 void
 printf(int fd, const char *s, ...)
 {
   write(fd, s, strlen(s));
-}
-
-unsigned long fibonacci_recursive(unsigned long n)
-{
-  if (n == 0)  {
-    return 1;
-  } 
-  if (n == 1) {
-    return 1;
-  }
-  return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2);
 }
 
 void
@@ -36,20 +25,10 @@ forktest(void)
     pid = fork();
     if(pid < 0)
       break;
-    if(pid == 0) {
-      // child
-      //unsigned long z = 0;
-      plevelstat();
-      fibonacci_recursive(34);
-      //printf(1," Z ES: %d\n",z);
+    if(pid == 0)
       exit();
-    }
-    if (pid > 0) {
-      // parent
-      //plevelstat();
-      //procstat();
-      wait();
-    }
+    if (n == 5)
+      procstat();
   }
 
   if(n == N){

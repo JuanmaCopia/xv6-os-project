@@ -636,6 +636,7 @@ procdump(void)
 }
 
 // Print a list with the existent processes, their state and id.
+// For debbuging purposes.
 int
 procstat(void)
 {
@@ -643,14 +644,13 @@ procstat(void)
   [UNUSED]    "unused",
   [EMBRYO]    "embryo",
   [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
+  [RUNNABLE]  "RUNNABLE",
   [RUNNING]   "run   ",
   [ZOMBIE]    "zombie"
   };
   struct proc *p;
 	char *state;
 
-	cprintf("\nProcesses List:\n\n");
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
 		if(p->state == UNUSED)
       continue;
@@ -664,17 +664,19 @@ procstat(void)
 	return 0;
 }
 
+// Prints a specified priority level of processes.
+// For debbuging purposes.
 void
 print_level(int level)
 {
   if (!is_empty(level)) {
-    cprintf("\nlevel %d: \n",level);
+    cprintf(" LEVEL %d: \n",level);
     struct proc *p = levels[level].head;
     static char *states[] = {
     [UNUSED]    "unused",
     [EMBRYO]    "embryo",
     [SLEEPING]  "sleep ",
-    [RUNNABLE]  "runble",
+    [RUNNABLE]  "RUNNABLE",
     [RUNNING]   "run   ",
     [ZOMBIE]    "zombie"
     };
@@ -685,17 +687,32 @@ print_level(int level)
         state = states[p->state];
       else
         state = "???";
-      cprintf("       > level %d: %d %s %s \n", p->priority, p->pid, state, p->name);
+      cprintf("            > %d %s %s \n", p->pid, state, p->name);
       p = p->next;
     }
   }
   else
-    cprintf("level %d: EMPTY\n",level);
+    cprintf(" LEVEL %d: EMPTY\n",level);
 }
 
+// Print a list with the existent processes, their state and id.
+// Prints a list with the complete table of priority levels.
+// For debbuging purposes.
 void
 plevelstat(void)
 {
-  for(int i = 0; i < PLEVELS; i++)
+  cprintf("\n--------- BEGIN: List processes --------\n");
+  acquire(&ptable.lock);
+
+  procstat();
+
+  cprintf("\n ========  Priority table  ========\n");
+  for(int i = 0; i < PLEVELS; i++) {
+    cprintf("\n");
     print_level(i);
+  }
+
+  release(&ptable.lock);
+
+  cprintf("\n--------- END: List processes --------\n");
 }
