@@ -6,7 +6,7 @@
 #include "stat.h"
 #include "user.h"
 
-#define N  100
+#define N  1000
 #define M  20000
 
 void
@@ -78,7 +78,7 @@ levelstest(void)
       exit();
     }
     // Show process table and priority table at the iteration 22.
-    if (n == 22)
+    if (n == 34)
       plevelstat();
   }
 
