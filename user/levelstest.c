@@ -1,4 +1,6 @@
 
+// Test program that creates processor oriented processes to test the multi-level
+// queues scheduler with feedback.
 
 #include "types.h"
 #include "stat.h"
@@ -6,7 +8,6 @@
 
 #define N  100
 #define M  20000
-#define Q  20000
 
 void
 printf(int fd, const char *s, ...)
@@ -23,21 +24,22 @@ int fibonacci(int n)
 
 int loopmatrix()
 {
-  int array[M][M];
+  int matrix[M][M];
   int k = 0;
   int pid = 0;
 
   pid = fork();
-  if(pid < 0) {
+
+  if(pid < 0)
     return k;
-  }
+
   if(pid == 0) {
     // child
     for(int i = 0; i < M; i++) {
       for(int j = 0; j < M; j++) {
-        for(int p = 0; p < Q; p++) {
-          array[i][j] = i * j - p;
-          k = array[i][j];
+        for(int p = 0; p < M; p++) {
+          matrix[i][j] = i * j - p;
+          k = matrix[i][j];
         }
       }
     }
@@ -48,9 +50,9 @@ int loopmatrix()
     // parent
     for(int i = 0; i < M; i++) {
       for(int j = 0; j < M; j++) {
-        for(int p = 0; p < Q; p++) {
-          array[i][j] = i * j - p;
-          k = array[i][j];
+        for(int p = 0; p < M; p++) {
+          matrix[i][j] = i * j - p;
+          k = matrix[i][j];
         }
       }
     }
@@ -63,39 +65,34 @@ void
 levelstest(void)
 {
   int n, pid;
-  printf(1, "levels test\n");
+  printf(1, "Priority Levels Table TEST\n");
 
-  for(n=0; n<N; n++){
+  for(n=0; n<N; n++) {
     pid = fork();
+
     if(pid < 0)
       break;
+
     if(pid == 0) {
       loopmatrix();
       exit();
     }
-    if (n == 22) {
+    // Show process table and priority table at the iteration 22.
+    if (n == 22)
       plevelstat();
-    }   
   }
 
-  if(n == N){
-    printf(1, "fork claimed to work N times!\n", N);
+  if(n == N)
     exit();
-  }
 
-  for(; n > 0; n--){
-    if(wait() < 0){
-      printf(1, "wait stopped early\n");
+  for(; n > 0; n--)
+    if(wait() < 0)
       exit();
-    }
-  }
 
-  if(wait() != -1){
-    printf(1, "wait got too many\n");
+  if(wait() != -1)
     exit();
-  }
 
-  printf(1, "levels test done\n");
+  printf(1, " DONE!\n");
 }
 
 int

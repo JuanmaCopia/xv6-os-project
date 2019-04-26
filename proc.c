@@ -88,18 +88,18 @@ is_empty(int level)
 
 // Lowers process's priority if possible.
 void
-decrease_priority(struct proc *p) {
-  if (p->priority < PLEVELS - 1) {
+decrease_priority(struct proc *p)
+{
+  if (p->priority < PLEVELS - 1)
     p->priority++;
-  }
 }
 
 // Increase process's priority if possible.
 void
-increase_priority(struct proc *p) {
-  if (p->priority > 0) {
+increase_priority(struct proc *p)
+{
+  if (p->priority > 0)
     p->priority--;
-  }
 }
 
 void
@@ -110,7 +110,8 @@ pinit(void)
 
 // Must be called with interrupts disabled.
 int
-cpuid() {
+cpuid()
+{
   return mycpu()-cpus;
 }
 
@@ -137,7 +138,8 @@ mycpu(void)
 // Disable interrupts so that we are not rescheduled
 // while reading proc from the cpu structure.
 struct proc*
-myproc(void) {
+myproc(void)
+{
   struct cpu *c;
   struct proc *p;
   pushcli();
@@ -419,7 +421,7 @@ scheduler(void)
 
     i = 0;
 
-    // Loop until find a non-empty priority level of process.
+    // Loop until find a non-empty priority level of processes.
     acquire(&ptable.lock);
     while (i < PLEVELS && is_empty(i))
       i++;
@@ -641,12 +643,12 @@ int
 procstat(void)
 {
 	static char *states[] = {
-  [UNUSED]    "unused",
-  [EMBRYO]    "embryo",
-  [SLEEPING]  "sleep ",
+  [UNUSED]    "unused  ",
+  [EMBRYO]    "embryo  ",
+  [SLEEPING]  "sleep   ",
   [RUNNABLE]  "RUNNABLE",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [RUNNING]   "running ",
+  [ZOMBIE]    "zombie  "
   };
   struct proc *p;
 	char *state;
@@ -658,7 +660,7 @@ procstat(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s   level: %d \n", p->pid, state, p->name, p->priority);
+    cprintf("- %d   %s   %s   level: %d \n", p->pid, state, p->name, p->priority);
 	}
 	cprintf("\n");
 	return 0;
@@ -673,12 +675,12 @@ print_level(int level)
     cprintf(" LEVEL %d: \n",level);
     struct proc *p = levels[level].head;
     static char *states[] = {
-    [UNUSED]    "unused",
-    [EMBRYO]    "embryo",
-    [SLEEPING]  "sleep ",
+    [UNUSED]    "unused  ",
+    [EMBRYO]    "embryo  ",
+    [SLEEPING]  "sleep   ",
     [RUNNABLE]  "RUNNABLE",
-    [RUNNING]   "run   ",
-    [ZOMBIE]    "zombie"
+    [RUNNING]   "running ",
+    [ZOMBIE]    "zombie  "
     };
     char *state;
 
@@ -687,7 +689,7 @@ print_level(int level)
         state = states[p->state];
       else
         state = "???";
-      cprintf("            > %d %s %s \n", p->pid, state, p->name);
+      cprintf("            > %d   %s   %s \n", p->pid, state, p->name);
       p = p->next;
     }
   }
@@ -701,18 +703,19 @@ print_level(int level)
 void
 plevelstat(void)
 {
-  cprintf("\n--------- BEGIN: List processes --------\n");
+  cprintf("\n----------- BEGIN: List processes ----------\n\n");
+  // Acquire lock to keep data consistency while printing.
   acquire(&ptable.lock);
-
+  // Print all processes.
   procstat();
 
-  cprintf("\n ========  Priority table  ========\n");
-  for(int i = 0; i < PLEVELS; i++) {
+  cprintf("\n ===========  Priority table  ===========\n");
+  // Print each priority level.
+  for(int i = 0; i < PLEVELS; i++){
     cprintf("\n");
     print_level(i);
   }
 
   release(&ptable.lock);
-
-  cprintf("\n--------- END: List processes --------\n");
+  cprintf("\n----------- END: List processes ----------\n");
 }
