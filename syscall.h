@@ -22,3 +22,4 @@
 #define SYS_close      21
 #define SYS_procstat   22
 #define SYS_plevelstat 23
+#define SYS_nice       24

@@ -44,13 +44,13 @@ enqueue(struct proc *p)
   p->state = RUNNABLE;
 
   // Enqueue process at the head of the linked list.
-  p->next = levels[p->priority].head;
+  p->next = levels[p->nice].head;
   p->back = 0;
-  if (levels[p->priority].head)
-    levels[p->priority].head->back = p;
+  if (levels[p->nice].head)
+    levels[p->nice].head->back = p;
   else
-    levels[p->priority].last = p;
-  levels[p->priority].head = p;
+    levels[p->nice].last = p;
+  levels[p->nice].head = p;
 }
 
 // Must be called with ptable locked to avoid data corruption
@@ -90,16 +90,16 @@ is_empty(int level)
 void
 decrease_priority(struct proc *p)
 {
-  if (p->priority < PLEVELS - 1)
-    p->priority++;
+  if (p->nice < PLEVELS - 1)
+    p->nice++;
 }
 
 // Increase process's priority if possible.
 void
 increase_priority(struct proc *p)
 {
-  if (p->priority > 0)
-    p->priority--;
+  if (p->nice > 0)
+    p->nice--;
 }
 
 void
@@ -173,7 +173,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   // Set priority level.
-  p->priority = DEFAULTPLEVEL;
+  p->nice = DEFAULTPLEVEL;
 
   release(&ptable.lock);
 
@@ -600,6 +600,31 @@ kill(int pid)
   return -1;
 }
 
+// Modifies the priority level of the calling process by
+// adding inc to its nice value. (A higher nice value 
+// means a low priority.)
+int
+nice(int inc)
+{
+  acquire(&ptable.lock);
+
+  // Get caller process.
+  struct proc *p = myproc();
+  int newnice = p->nice + inc;
+
+  // If the new nice value is not valid.
+  if (newnice < 0 || newnice > PLEVELS - 1) {
+    release(&ptable.lock);
+    return -1;
+  }
+
+  // Set new value.
+  p->nice = newnice;
+
+  release(&ptable.lock);
+  return newnice;
+}
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
@@ -660,7 +685,7 @@ procstat(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("- %d   %s   %s   level: %d \n", p->pid, state, p->name, p->priority);
+    cprintf("- %d   %s   %s   level: %d \n", p->pid, state, p->name, p->nice);
 	}
 	cprintf("\n");
 	return 0;

@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int procstat(void);
 void plevelstat(void);
+int nice(int inc);
 
 // ulib.c
 int stat(const char*, struct stat*);
