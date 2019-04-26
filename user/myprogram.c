@@ -8,6 +8,9 @@ main()
 	int n = nice(0);
 
 	switch (n) {
+		case -1:
+			printf(1, "No se puedo incrementar el nice, se iba de rango");
+			break;
 		case 0:
 			printf(1, "Nice es 0\n");
 			break;
@@ -25,9 +28,11 @@ main()
 	}
 
 	n = nice(2);
-	n = nice(2);
 
 	switch (n) {
+		case -1:
+			printf(1, "No se puedo incrementar el nice, se iba de rango");
+			break;
 		case 0:
 			printf(1, "el nuevo Nice es 0\n");
 			break;
