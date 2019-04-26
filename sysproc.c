@@ -98,9 +98,23 @@ sys_procstat(void)
 	return procstat();
 }
 
+// Print a list with the existent processes, their state and id.
+// Prints a list with the complete table of priority levels.
 int
 sys_plevelstat(void)
 {
 	plevelstat();
   return 0;
+}
+
+// Modifies the priority level of the calling process by
+// adding inc to its nice value.
+int
+sys_nice(void)
+{
+  int inc;
+  // Get argument.
+  argint(0, &inc);
+
+  return nice(inc);
 }

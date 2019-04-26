@@ -50,7 +50,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   uint ticks_count;            // Amount of ticks occured whitout releasing the CPU
-  uint priority;               // Actual level of priority of this process
+  int nice;                    // Actual level of priority of this process
   struct proc *next;           // Next process with higher priority than this on the same level
   struct proc *back;           // Previous process with lower priority than this on the same level
 };

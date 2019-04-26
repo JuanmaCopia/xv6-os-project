@@ -2,18 +2,53 @@
 #include "stat.h"
 #include "user.h"
 
-#define N 10000
-
 int
-main(int argc, char *argv[])
+main()
 {
-	int z = 0;
-	printf(1,"Comienzo \n");
+	int n = nice(0);
 
-	for(int i = 0; i < N; i++)
-		for(int j = 0; j < N; j++)
-			z++;
+	switch (n) {
+		case -1:
+			printf(1, "No se puedo incrementar el nice, se iba de rango");
+			break;
+		case 0:
+			printf(1, "Nice es 0\n");
+			break;
+		case 1:
+			printf(1, "Nice es 1\n");
+			break;
+		case 2:
+			printf(1, "Nice es 2\n");
+			break;
+		case 3:
+			printf(1, "Nice es 3\n");
+			break;
+		default:
+			printf(1, "ERROR: Nice no valido\n");
+	}
 
-	printf(1,"Fin test, z es: %d \n",z);
+	n = nice(2);
+
+	switch (n) {
+		case -1:
+			printf(1, "No se puedo incrementar el nice, se iba de rango");
+			break;
+		case 0:
+			printf(1, "el nuevo Nice es 0\n");
+			break;
+		case 1:
+			printf(1, "el nuevo Nice es 1\n");
+			break;
+		case 2:
+			printf(1, "el nuevo Nice es 2\n");
+			break;
+		case 3:
+			printf(1, "el nuevo Nice es 3\n");
+			break;
+		default:
+			printf(1, "ERROR: el nuevo Nice no es valido\n");
+	}
+
 	exit();
 }
+
