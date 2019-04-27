@@ -483,10 +483,16 @@ yield(void)
 
   // Reset process tick count.
   myproc()->ticks_count = 0;
+  // Decrease priority due to QUANTUM consumition.
   decrease_priority(myproc());
+
+  // If the process is not on priority level 0 and age reaches MAXAGE.
+  if (myproc()->nice > 0 && ++myproc()->age >= MAXAGE) 
+    // Set to max priority to avoid starvation.
+    myproc()->nice = 0;
+  
   // Add process to the priority table.
   enqueue(myproc());
-
   sched();
 
   release(&ptable.lock);
