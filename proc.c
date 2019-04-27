@@ -83,6 +83,8 @@ dequeue(int level)
 int
 is_empty(int level) 
 {
+  if (level < 0 || level >= PLEVELS)
+    panic("is empty of invalid level value\n");
   return !levels[level].head;
 }
 
@@ -90,6 +92,8 @@ is_empty(int level)
 void
 decrease_priority(struct proc *p)
 {
+  if (!p)
+    panic("decrease priority of null process\n");
   if (p->nice < PLEVELS - 1)
     p->nice++;
 }
@@ -98,6 +102,8 @@ decrease_priority(struct proc *p)
 void
 increase_priority(struct proc *p)
 {
+  if (!p)
+    panic("increase priority of null process\n");
   if (p->nice > 0)
     p->nice--;
 }
@@ -449,6 +455,29 @@ scheduler(void)
   }
 }
 
+// Must be called with ptable locked to avoid data corruption.
+// Prioritazed the "oldest" process (or at least the less
+// prioritized one) by increasing its priority level by 1.
+void
+prioritize_oldest(void)
+{
+  struct proc *p;
+  int i = PLEVELS - 1;
+
+  acquire(&ptable.lock);
+  // Find last non-empty level.
+  while (i >= 0 && is_empty(i))
+    i--;
+  // If exist.
+  if (i >= 0) {
+    p = dequeue(i);
+    increase_priority(p);
+    enqueue(p);
+  }
+
+  release(&ptable.lock);
+}
+
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
@@ -481,15 +510,10 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
 
-  // Reset process tick count.
+// Reset process tick count.
   myproc()->ticks_count = 0;
   // Decrease priority due to QUANTUM consumition.
   decrease_priority(myproc());
-
-  // If the process is not on priority level 0 and age reaches MAXAGE.
-  if (myproc()->nice > 0 && ++myproc()->age >= MAXAGE) 
-    // Set to max priority to avoid starvation.
-    myproc()->nice = 0;
   
   // Add process to the priority table.
   enqueue(myproc());
@@ -567,9 +591,11 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan) {
+      increase_priority(p);
       // Add process to the priority table.
       enqueue(p);
+    }
 }
 
 // Wake up all processes sleeping on chan.

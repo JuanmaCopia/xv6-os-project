@@ -9,7 +9,7 @@
 #define MAXARG       32  // max exec arguments
 #define MAXOPBLOCKS  10  // max # of blocks any FS op writes
 #define QUANTUM       3  // # of ticks to the current proccess to release the cpu
-#define MAXAGE      100  // max amount of yields of a proccess out of priority level 0
+#define AGINGSTEP    50  // amount of ticks to perform a priorization of the oldest process.
 #define PLEVELS       4  // amount of priority levels that a process can have
 #define DEFAULTPLEVEL 0  // starting priority level of all processes 
 #define LOGSIZE      (MAXOPBLOCKS*3)  // max data blocks in on-disk log

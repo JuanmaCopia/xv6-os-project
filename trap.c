@@ -13,6 +13,7 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+uint aging_ticks = 0; // Number of ticks occured since last priorization.
 
 void
 tvinit(void)
@@ -37,9 +38,6 @@ void
 trap(struct trapframe *tf)
 {
   if(tf->trapno == T_SYSCALL){
-    // Increase process priority
-    increase_priority(myproc());
-    
     if(myproc()->killed)
       exit();
     myproc()->tf = tf;
@@ -54,6 +52,14 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+
+      if (++aging_ticks >= AGINGSTEP) {
+        // Increase priority of the oldest process to avoid starvation.
+        prioritize_oldest();
+        // Reset aging ticks.
+        aging_ticks = 0;
+      }
+      
       wakeup(&ticks);
       release(&tickslock);
     }
