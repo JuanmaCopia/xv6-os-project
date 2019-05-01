@@ -5,27 +5,27 @@
 int
 main(int argc, char *argv[])
 {
-  int pid;
   int inc = atoi(argv[1]);     // Nice increment.
-  char * executable = argv[2];
-  char * arg[] = {executable};
+  char * arg[argc-2];
+  int pid,i,j;
 
-  if(argc != 3)
-    printf(1, "Usage: nice PRIORITY EXECUTABLE\n");
+  // Create arguments vector for the command to execute.
+  for(i = 2, j = 0; i < argc; i++, j++)
+    arg[j] = argv[i];
+
+  if(argc < 3)
+    printf(1, "Usage: nice PRIORITY COMMAND\n");
   else {
     pid = fork();
     if (pid == 0){
-      // child
-
       // Change child's priority.
       nice(inc);
 
       // Execute command.
-      exec(executable, arg);
+      exec(arg[0], arg);
       printf(2, "exec failed\n");
       exit();
     }
-    
     // parent
     wait();
   }
