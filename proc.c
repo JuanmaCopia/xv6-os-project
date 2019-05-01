@@ -37,7 +37,7 @@ static void wakeup1(void *chan);
 void
 enqueue(struct proc *p)
 {
-  if (!p)
+  if(!p)
     panic("enqueue called with null process\n");
 
   // Set process state as RUNNABLE.
@@ -46,7 +46,7 @@ enqueue(struct proc *p)
   // Enqueue process at the head of the linked list.
   p->next = levels[p->nice].head;
   p->back = 0;
-  if (levels[p->nice].head)
+  if(levels[p->nice].head)
     levels[p->nice].head->back = p;
   else
     levels[p->nice].last = p;
@@ -62,11 +62,11 @@ dequeue(int level)
   // Get the process to dequeue.
   struct proc *p = levels[level].last;
 
-  if (!p)
+  if(!p)
     panic("dequeue of empty priority level\n");
 
   // Dequeue the process from the end of the linked list.
-  if (!p->back) {
+  if(!p->back){
     levels[level].last = 0;
     levels[level].head = 0;
   }
@@ -83,8 +83,8 @@ dequeue(int level)
 int
 is_empty(int level) 
 {
-  if (level < 0 || level >= PLEVELS)
-    panic("is empty of invalid level value\n");
+  if(level < 0 || level >= PLEVELS)
+    panic("is empty call over invalid level value\n");
   return !levels[level].head;
 }
 
@@ -92,9 +92,9 @@ is_empty(int level)
 void
 decrease_priority(struct proc *p)
 {
-  if (!p)
+  if(!p)
     panic("decrease priority of null process\n");
-  if (p->nice < PLEVELS - 1)
+  if(p->nice < PLEVELS - 1)
     p->nice++;
 }
 
@@ -102,9 +102,9 @@ decrease_priority(struct proc *p)
 void
 increase_priority(struct proc *p)
 {
-  if (!p)
+  if(!p)
     panic("increase priority of null process\n");
-  if (p->nice > 0)
+  if(p->nice > 0)
     p->nice--;
 }
 
@@ -429,11 +429,11 @@ scheduler(void)
 
     // Loop until find a non-empty priority level of processes.
     acquire(&ptable.lock);
-    while (i < PLEVELS && is_empty(i))
+    while(i < PLEVELS && is_empty(i))
       i++;
 
     // If its found.
-    if (i < PLEVELS) {
+    if(i < PLEVELS){
       // Dequeue the next process from the level.
       p = dequeue(i);
 
@@ -466,10 +466,10 @@ prioritize_oldest(void)
 
   acquire(&ptable.lock);
   // Find last non-empty level.
-  while (i >= 0 && is_empty(i))
+  while(i >= 0 && is_empty(i))
     i--;
   // If exist.
-  if (i >= 0) {
+  if(i >= 0){
     p = dequeue(i);
     increase_priority(p);
     enqueue(p);
@@ -510,11 +510,10 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
 
-// Reset process tick count.
+  // Reset process tick count.
   myproc()->ticks_count = 0;
   // Decrease priority due to QUANTUM consumition.
   decrease_priority(myproc());
-  
   // Add process to the priority table.
   enqueue(myproc());
   sched();
@@ -591,7 +590,7 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan) {
+    if(p->state == SLEEPING && p->chan == chan){
       increase_priority(p);
       // Add process to the priority table.
       enqueue(p);
@@ -645,7 +644,7 @@ nice(int inc)
   int newnice = p->nice + inc;
 
   // If the new nice value is not valid.
-  if (newnice < 0 || newnice > PLEVELS - 1) {
+  if(newnice < 0 || newnice > PLEVELS - 1){
     release(&ptable.lock);
     return -1;
   }
@@ -728,7 +727,7 @@ procstat(void)
 void
 print_level(int level)
 {
-  if (!is_empty(level)) {
+  if(!is_empty(level)){
     cprintf(" LEVEL %d: \n",level);
     struct proc *p = levels[level].head;
     static char *states[] = {
@@ -741,7 +740,7 @@ print_level(int level)
     };
     char *state;
 
-    while (p) {
+    while(p){
       if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
         state = states[p->state];
       else
