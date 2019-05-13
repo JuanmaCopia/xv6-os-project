@@ -125,7 +125,8 @@ void            increase_priority();
 void            decrease_priority();
 void            plevelstat(void);
 int             nice(int inc);
-void            prioritize_oldest(void);
+void            aging(void);
+void            print_level();
 
 // swtch.S
 void            swtch(struct context**, struct context*);

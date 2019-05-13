@@ -54,8 +54,8 @@ trap(struct trapframe *tf)
       ticks++;
 
       if(++aging_ticks >= AGINGSTEP){
-        // Increase priority of the oldest process to avoid starvation.
-        prioritize_oldest();
+        // Perform aging and prioritize those process that exeeds the age limit.
+        aging();
         // Reset aging ticks.
         aging_ticks = 0;
       }

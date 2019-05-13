@@ -73,9 +73,9 @@ dequeue(int level)
   else {
     p->back->next = 0;
     levels[level].last = p->back;
-    p->back = 0;
   }
-
+  p->back = 0;
+  p->next = 0;
   return p;
 }
 
@@ -106,6 +106,34 @@ increase_priority(struct proc *p)
     panic("increase priority of null process\n");
   if(p->nice > 0)
     p->nice--;
+}
+
+// Must be called with ptable locked to avoid data corruption
+// between different processes. Removes a process from an specified
+// priority level.
+void
+removefromlevel(struct proc *p, int level)
+{
+  if(!p->back && !p->next){
+    levels[level].head = 0;
+    levels[level].last = 0;
+  }
+  else {
+    if(!p->next){
+      p->back->next = 0;
+      levels[level].last = p->back;
+    }
+    else if(!p->back){
+      levels[level].head = p->next;
+      p->next->back = 0;
+    }
+    else{
+      p->back->next = p->next;
+      p->next->back = p->back;
+    }
+  }
+  p->back = 0;
+  p->next = 0;
 }
 
 void
@@ -455,24 +483,33 @@ scheduler(void)
   }
 }
 
-// Must be called with ptable locked to avoid data corruption.
-// Prioritazed the "oldest" process (or at least the less
-// prioritized one) by increasing its priority level by 1.
+// Performs an aging of all RUNNABLE processes and
+// raises the priority level of those which exeed
+// the age limit.
 void
-prioritize_oldest(void)
+aging(void)
 {
   struct proc *p;
-  int i = PLEVELS - 1;
+  struct proc *next;
+  int i = 1;
 
   acquire(&ptable.lock);
-  // Find last non-empty level.
-  while(i >= 0 && is_empty(i))
-    i--;
-  // If exist.
-  if(i >= 0){
-    p = dequeue(i);
-    increase_priority(p);
-    enqueue(p);
+  // Loop over levels, from 1 to last.
+  while(i < PLEVELS){
+    p = levels[i].head;
+    // Loop over all processes of a level.
+    while (p != 0){
+      next = p->next;
+      // If exeeds the age limit.
+      if(++p->age >= AGELIMIT){
+        removefromlevel(p,i);
+        increase_priority(p);
+        enqueue(p);
+      }
+      // Get next.
+      p = next;
+    }
+    i++;
   }
 
   release(&ptable.lock);
