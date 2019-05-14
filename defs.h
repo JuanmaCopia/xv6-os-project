@@ -121,12 +121,12 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             procstat(void);
-void            increase_priority();
-void            decrease_priority();
+void            increasepriority();
+void            decreasepriority();
 void            plevelstat(void);
 int             nice(int inc);
 void            aging(void);
-void            print_level();
+void            printlevel();
 
 // swtch.S
 void            swtch(struct context**, struct context*);

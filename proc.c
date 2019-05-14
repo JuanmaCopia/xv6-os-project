@@ -81,7 +81,7 @@ dequeue(int level)
 
 // Returns true if the level is empty, false otherwise.
 int
-is_empty(int level) 
+isempty(int level) 
 {
   if(level < 0 || level >= PLEVELS)
     panic("is empty call over invalid level value\n");
@@ -90,7 +90,7 @@ is_empty(int level)
 
 // Lowers process's priority if possible.
 void
-decrease_priority(struct proc *p)
+decreasepriority(struct proc *p)
 {
   if(!p)
     panic("decrease priority of null process\n");
@@ -100,7 +100,7 @@ decrease_priority(struct proc *p)
 
 // Increase process's priority if possible.
 void
-increase_priority(struct proc *p)
+increasepriority(struct proc *p)
 {
   if(!p)
     panic("increase priority of null process\n");
@@ -114,20 +114,24 @@ increase_priority(struct proc *p)
 void
 removefromlevel(struct proc *p, int level)
 {
+  // If is the only process on the level.
   if(!p->back && !p->next){
     levels[level].head = 0;
     levels[level].last = 0;
   }
   else {
+    // If is the last process on the level.
     if(!p->next){
       p->back->next = 0;
       levels[level].last = p->back;
     }
+    // If is the first process of the level.
     else if(!p->back){
       levels[level].head = p->next;
       p->next->back = 0;
     }
-    else{
+    else {
+      // Is a process from the middle.
       p->back->next = p->next;
       p->next->back = p->back;
     }
@@ -457,7 +461,7 @@ scheduler(void)
 
     // Loop until find a non-empty priority level of processes.
     acquire(&ptable.lock);
-    while(i < PLEVELS && is_empty(i))
+    while(i < PLEVELS && isempty(i))
       i++;
 
     // If its found.
@@ -503,7 +507,7 @@ aging(void)
       // If exeeds the age limit.
       if(++p->age >= AGELIMIT){
         removefromlevel(p,i);
-        increase_priority(p);
+        increasepriority(p);
         enqueue(p);
       }
       // Get next.
@@ -550,7 +554,7 @@ yield(void)
   // Reset process tick count.
   myproc()->ticks_count = 0;
   // Decrease priority due to QUANTUM consumition.
-  decrease_priority(myproc());
+  decreasepriority(myproc());
   // Add process to the priority table.
   enqueue(myproc());
   sched();
@@ -628,7 +632,7 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan){
-      increase_priority(p);
+      increasepriority(p);
       // Add process to the priority table.
       enqueue(p);
     }
@@ -762,9 +766,9 @@ procstat(void)
 // Prints a specified priority level of processes.
 // For debbuging purposes.
 void
-print_level(int level)
+printlevel(int level)
 {
-  if(!is_empty(level)){
+  if(!isempty(level)){
     cprintf(" LEVEL %d: \n",level);
     struct proc *p = levels[level].head;
     static char *states[] = {
@@ -806,7 +810,7 @@ plevelstat(void)
   // Print each priority level.
   for(int i = 0; i < PLEVELS; i++){
     cprintf("\n");
-    print_level(i);
+    printlevel(i);
   }
 
   release(&ptable.lock);

@@ -10,7 +10,7 @@
 #define MAXOPBLOCKS  10  // max # of blocks any FS op writes
 #define QUANTUM       3  // # of ticks to the current proccess to release the cpu
 #define AGINGSTEP    50  // amount of ticks to perform a priorization of the oldest process
-#define AGELIMIT      2  // limit of age of a process to be considered old
+#define AGELIMIT      5  // limit of age of a process to be considered old
 #define PLEVELS       4  // amount of priority levels that a process can have
 #define DEFAULTPLEVEL 0  // starting priority level of all processes 
 #define LOGSIZE      (MAXOPBLOCKS*3)  // max data blocks in on-disk log
