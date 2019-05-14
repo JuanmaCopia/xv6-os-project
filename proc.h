@@ -51,7 +51,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   uint ticks_count;            // Amount of ticks occured whitout releasing the CPU
   int nice;                    // Actual level of priority of this process
-  uint age;                    // Number of times that this process has been yielded
+  uint age;                    // Age of this process
   struct proc *next;           // Next process with higher priority than this on the same level
   struct proc *back;           // Previous process with lower priority than this on the same level
 };
