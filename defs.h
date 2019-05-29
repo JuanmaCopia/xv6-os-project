@@ -126,7 +126,11 @@ void            decreasepriority();
 void            plevelstat(void);
 int             nice(int inc);
 void            aging(void);
-void            printlevel();
+void            printlevel(int level);
+int             semget(int key, int init_value);
+int             semfree(int key);
+int             semdown(int key);
+int             semup(int key);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
