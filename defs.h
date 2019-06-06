@@ -127,6 +127,8 @@ void            plevelstat(void);
 int             nice(int inc);
 void            aging(void);
 void            printlevel(int level);
+
+// semaphore.c
 int             semget(int key, int init_value);
 int             semfree(int key);
 int             semdown(int key);

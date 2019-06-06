@@ -144,6 +144,7 @@ void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+  seminit();
 }
 
 // Must be called with interrupts disabled.
@@ -236,6 +237,11 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  // Initialize semaphores descriptors.
+  p->semcount = 0;
+  for(int i = 0; i < PROCMAXSEM; i++) 
+    p->semids[i] = -1;
+  
   return p;
 }
 
