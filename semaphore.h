@@ -1,4 +1,15 @@
 
+// Error numbers.
+#define EINVAL    -2  // There isn't a semaphore with that key.
+#define ENSEM     -3  // Too many semaphores in use by this process.
+#define ENSEMSYS  -4  // Too many semaphores in use on the system.
+
+struct semaphore{
+  int value;
+  int references;
+};
+
+
 // If key == -1 creates a new semaphore and returns its id.
 // Otherwise returns the semaphore id corresponding to the key.
 // In case of errors the next values are returned:

@@ -13,7 +13,7 @@
 #define AGELIMIT       5  // limit of age of a process to be considered old
 #define PLEVELS        4  // amount of priority levels that a process can have
 #define DEFAULTPLEVEL  0  // starting priority level of all processes
-#define PROCESSMAXSEM  5  // maximum amount of semaphores by process
+#define PROCMAXSEM     5  // maximum amount of semaphores by process
 #define SYSMAXSEM     20  // maximum amount of semaphores on the system
 #define LOGSIZE       (MAXOPBLOCKS*3)  // max data blocks in on-disk log
 #define NBUF          (MAXOPBLOCKS*3)  // size of disk block cache
