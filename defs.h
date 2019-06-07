@@ -121,13 +121,20 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             procstat(void);
-void            increasepriority();
-void            decreasepriority();
+void            increasepriority(struct proc *p);
+void            decreasepriority(struct proc *p);
 void            plevelstat(void);
 int             nice(int inc);
 void            aging(void);
-void            printlevel();
+void            printlevel(int level);
 
+// semaphore.c
+int             semget(int key, int init_value);
+int             semfree(int key);
+int             semdown(int key);
+int             semup(int key);
+void            seminit(void);
+void            semcopy(struct proc *, struct proc *);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

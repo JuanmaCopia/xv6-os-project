@@ -113,8 +113,50 @@ int
 sys_nice(void)
 {
   int inc;
+
   // Get argument.
   argint(0, &inc);
-
   return nice(inc);
+}
+
+int
+sys_semget(void)
+{
+  int key;
+  int initvalue;
+
+  // Get arguments.
+  argint(0, &key);
+  argint(1, &initvalue);
+  return semget(key, initvalue);
+}
+
+int
+sys_semfree(void)
+{
+  int key;
+
+  // Get argument.
+  argint(0, &key);
+  return semfree(key);
+}
+
+int
+sys_semdown(void)
+{
+  int key;
+
+  // Get argument.
+  argint(0, &key);
+  return semdown(key);
+}
+
+int
+sys_semup(void)
+{
+  int key;
+  
+  // Get argument.
+  argint(0, &key);
+  return semup(key);
 }

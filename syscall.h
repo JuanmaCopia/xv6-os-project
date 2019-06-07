@@ -23,3 +23,7 @@
 #define SYS_procstat   22
 #define SYS_plevelstat 23
 #define SYS_nice       24
+#define SYS_semget     25
+#define SYS_semfree    26
+#define SYS_semdown    27
+#define SYS_semup      28

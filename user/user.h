@@ -26,6 +26,10 @@ int uptime(void);
 int procstat(void);
 void plevelstat(void);
 int nice(int inc);
+int semget(int key, int init_value);
+int semfree(int key);
+int semdown(int key);
+int semup(int key);
 
 // ulib.c
 int stat(const char*, struct stat*);

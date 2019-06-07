@@ -52,6 +52,8 @@ struct proc {
   uint ticks_count;            // Amount of ticks occured whitout releasing the CPU
   int nice;                    // Actual level of priority of this process
   uint age;                    // Age of this process
+  int semids[PROCMAXSEM];      // Array of semaphores's id used by this process.
+  int semcount;                // Amount of semaphores in use by this process.
   struct proc *next;           // Next process with higher priority than this on the same level
   struct proc *back;           // Previous process with lower priority than this on the same level
 };
