@@ -14,8 +14,8 @@ int number;
 void initialize()
 {
   number = 0;
-
-  fd = open("buffer", O_CREATE);
+  if ((fd = open("buffer", O_RDWR)) < 0)
+    fd = open("buffer", O_CREATE);
   write(fd, &number, sizeof(number));
 	close(fd);
 }
@@ -95,7 +95,7 @@ main()
 
   lk = semget(-1, 1);
   empty = semget(-1, 0);
-  full = semget(-1, 100);
+  full = semget(-1, BUFFER_SIZE);
 
   initialize();
 

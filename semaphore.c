@@ -15,14 +15,10 @@ struct {
   struct spinlock lock;                
 } sems;
 
-// Initializes semaphore's values.
+// Initializes semaphore's lock.
 void 
 seminit()
 {
-  // reviser
-  for(int i = 0; i < SYSMAXSEM; i++)
-		sems.list[i].references = 0;
-  sems.used = 0;
 	initlock(&sems.lock, "sems");
 }
 
