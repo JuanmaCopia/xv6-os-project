@@ -3,6 +3,8 @@
 #include "user.h"
 #include "fcntl.h"
 
+#define BUFFER_SIZE 70
+
 int lk;
 int empty;
 int full;
@@ -24,12 +26,17 @@ enqueue()
   if(semdown(lk) < 0)
     printf(1, "ERROR: semdown lk enqueue \n");
 
+  fd = open("buffer", O_RDWR);
   read(fd, &number, sizeof(number));
+  close(fd);
+
 	number++;
 
+  fd = open("buffer", O_RDWR);
 	write(fd, &number, sizeof(number));
-	printf(1, "PRODUCER: writed: %d \n", number);
 	close(fd);
+
+  printf(1, "PRODUCER:    %d \n", number);
 
   if(semup(lk) < 0)
     printf(1, "ERROR: semup lk enqueue \n");
@@ -41,13 +48,17 @@ dequeue()
   if(semdown(lk) < 0)
     printf(1, "ERROR: semdown lk dequeue \n");
 
+  fd = open("buffer", O_RDWR);
   read(fd, &number, sizeof(number));
+  close(fd);
 
 	number--;
 
+  fd = open("buffer", O_RDWR);
 	write(fd, &number, sizeof(number));
-	printf(1, "CONSUMER: writed: %d \n", number);
 	close(fd);
+
+  printf(1, "CONSUMER:         %d \n", number);
 
   if(semup(lk) < 0)
     printf(1, "ERROR: semup lk dequeue \n");
@@ -77,7 +88,6 @@ consume()
   }
 }
 
-
 int
 main()
 {
@@ -86,10 +96,6 @@ main()
   lk = semget(-1, 1);
   empty = semget(-1, 0);
   full = semget(-1, 100);
-
-  printf(1, "lk = %d \n", lk);
-  printf(1, "empty = %d \n", empty);
-  printf(1, "full = %d \n", full);
 
   initialize();
 
