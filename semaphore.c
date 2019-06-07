@@ -216,6 +216,7 @@ int
 semup(int key)
 {
   struct semaphore * s;
+  int semvalue;
 
   acquire(&sems.lock);
   // If invalid key.
@@ -225,11 +226,15 @@ semup(int key)
   }
 
   s = &sems.list[key];
+  semvalue = s->value;
   // Increase value.
   s->value++;
   release(&sems.lock);
-  // Wake up all processes sleeping on the semaphore s.
-  wakeup(s);
+  
+  if(semvalue == 0){
+    // Wake up all processes sleeping on the semaphore s.
+    wakeup(s);
+  }
   return 0;
 }
 
