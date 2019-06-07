@@ -108,7 +108,5 @@ main()
     //parent
     consume();
   }
-
-	return 0;
 	exit();
 }
