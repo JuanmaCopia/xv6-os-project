@@ -343,11 +343,12 @@ fork(void)
 
   pid = np->pid;
 
-  acquire(&ptable.lock);
+  // Copy semaphores's descriptor from parent to child.
+  semcopy(curproc, np);
 
+  acquire(&ptable.lock);
   // Add process to the priority table.
   enqueue(np);
-
   release(&ptable.lock);
 
   return pid;

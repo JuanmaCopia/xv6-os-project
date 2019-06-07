@@ -133,7 +133,8 @@ int             semget(int key, int init_value);
 int             semfree(int key);
 int             semdown(int key);
 int             semup(int key);
-
+void            seminit(void);
+void            semcopy(struct proc *, struct proc *);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

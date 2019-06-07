@@ -237,7 +237,8 @@ semup(int key)
   return 0;
 }
 
-int 
+// Copy the semaphores's destriptor from parent to child.
+void
 semcopy(struct proc * parent, struct proc * child)
 {
   int semid;
@@ -245,17 +246,15 @@ semcopy(struct proc * parent, struct proc * child)
 	if(!parent || !child)
     panic("semcopy error: null process");
  
-  // 
 	for(int i = 0; i < PROCMAXSEM; i++){
     semid = parent->semids[i];
   	if(semid != -1){
       child->semids[i] = semid;
       acquire(&sems.lock);
-      // Increase reference counter of the copied semaphore.
+      // Increase reference counter.
       sems.list[semid].references++;
       release(&sems.lock); 
   	}
   }
   child->semcount = parent->semcount;
-  return 0;
 }
