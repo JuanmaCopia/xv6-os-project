@@ -100,6 +100,22 @@ trap(struct trapframe *tf)
             "eip 0x%x addr 0x%x--kill proc\n",
             myproc()->pid, myproc()->name, tf->trapno,
             tf->err, cpuid(), tf->eip, rcr2());
+
+    // si la trapno es 14, excepcion y rcr2() es una direccion
+    // que esta en el tope superior del stack inmediatamente.
+    // Si esta mas abajo ni bosta, lo matamos?
+
+    // no podemos dejar que escriba en la pagina reservada
+
+    // cuanto bajamos elstack lo decidimosn nosotros a esa constantre
+
+    // programa de prueba: uno q use muhco el stack
+
+    // probablemente tengamos q agregar algo en proc q nos permita saber si llegamos
+    // a la direccion de memoria de la pagina reservada para stack overflow
+    // o directamente a la de datos.
+
+
     myproc()->killed = 1;
   }
 
