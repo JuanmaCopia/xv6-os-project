@@ -271,7 +271,12 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       if(pa == 0)
         panic("kfree");
       char *v = P2V(pa);
-      kfree(v);
+      
+      if(refcount(v) == 1)
+        kfree(v);
+      else
+        decref(v);
+
       *pte = 0;
     }
   }
@@ -337,6 +342,39 @@ copyuvm(pde_t *pgdir, uint sz)
       goto bad;
     }
   }
+  return d;
+
+bad:
+  freevm(d);
+  return 0;
+}
+
+pde_t*
+cowuvm(pde_t *pgdir, uint sz)
+{
+  pde_t *d;
+  pte_t *pte;
+  uint pa, i, flags;
+
+  if((d = setupkvm()) == 0)
+    return 0;
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+      panic("copyuvm: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("copyuvm: page not present");
+    // Clear Write Bit
+    *pte &= ~PTE_W;      
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+
+    incref(P2V(pa));
+  }
+  // Flush TLB
+  lcr3(V2P(pgdir));
   return d;
 
 bad:
