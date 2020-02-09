@@ -356,6 +356,8 @@ flushtlb()
   lcr3(V2P(myproc()->pgdir));
 }
 
+// Given a parent process's page table, maps the parent
+// pages into the child.
 pde_t*
 cowuvm(pde_t *pgdir, uint sz)
 {
@@ -403,6 +405,8 @@ uva2ka(pde_t *pgdir, char *uva)
   return (char*)P2V(PTE_ADDR(*pte));
 }
 
+// Page Fault Handler: When a process tries to Write a read-only page due
+// to copy-on-write.
 void
 handlepgflt()
 {
@@ -413,10 +417,10 @@ handlepgflt()
 
   // Get the faulting virtual address.
   faultaddr = rcr2();
-  // Obtain the start of the page that the faulty virtual address belongs to
+  // Get the start of the page.
   gfa = (char*)PGROUNDDOWN((uint)faultaddr);
-  // fault is not for user address - kill process
-  if((pte = walkpgdir(myproc()->pgdir, gfa, 0)) == 0)
+  // If the faulty address is not user address kill the process.
+  if(faultaddr >= KERNBASE || (pte = walkpgdir(myproc()->pgdir, gfa, 0)) == 0)
     goto kill;
 
   pa = PTE_ADDR(*pte);
@@ -424,11 +428,10 @@ handlepgflt()
   char *v = P2V(pa);
 
   if(refcount(v) > 1){
-    // allocate a new page
     if((mem = kalloc()) == 0)
       goto nomem;
     memmove(mem, v, PGSIZE);
-    // Point the PTE pointer to the newly allocated page
+    // Make pte to point to the new allocated page.
     *pte = V2P(mem) | flags | PTE_P | PTE_W;
     decref(v);
   }

@@ -9,6 +9,9 @@
 #include "mmu.h"
 #include "spinlock.h"
 
+#define NUMPAGES (PHYSTOP / PGSIZE)
+#define PAGEINDEX(va) ((V2P(va) / PGSIZE))
+
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
                    // defined by the kernel linker script in kernel.ld
@@ -21,7 +24,7 @@ struct {
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
-  unsigned int cow_reference_count[PHYSTOP / PGSIZE];
+  unsigned char cow_reference_count[NUMPAGES];
 } kmem;
 
 // Initialization happens in two phases.
@@ -91,41 +94,40 @@ kalloc(void)
   r = kmem.freelist;
   if(r) {
     kmem.freelist = r->next;
-    kmem.cow_reference_count[(V2P(r) / PGSIZE)] = 1;
+    kmem.cow_reference_count[PAGEINDEX(r)] = 1;
   }
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
 }
 
+// Increase the reference count for the page.
 void
 incref(char *v)
 {
   if(kmem.use_lock)
     acquire(&kmem.lock);
-
-  kmem.cow_reference_count[(V2P(v) / PGSIZE)] += 1;
-
+  kmem.cow_reference_count[PAGEINDEX(v)] += 1;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
 
+// Decrease the reference count for the page.
 void
 decref(char *v)
 {
   if(kmem.use_lock)
     acquire(&kmem.lock);
-
-  kmem.cow_reference_count[(V2P(v) / PGSIZE)] -= 1;
-
+  kmem.cow_reference_count[PAGEINDEX(v)] -= 1;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
 
+// Returns the reference count for the page.
 int
 refcount(char *v)
 {
-  return kmem.cow_reference_count[(V2P(v) / PGSIZE)];
+  return kmem.cow_reference_count[PAGEINDEX(v)];
 }
 
 
