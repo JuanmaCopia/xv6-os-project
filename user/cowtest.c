@@ -2,22 +2,41 @@
 #include "stat.h"
 #include "user.h"
 
-int a = 1;
+int n = 0;
 
 int main(void)
 {
-    printf(1,"Parent and Child share the global variable a \n");
+  printf(1, "\nVariable n is shared \n\n");
 
-    int pid = fork();
-    if(pid==0)
+  if(fork()==0)
+  {
+    printf(1, "Child 1 (before): n = %d\n", n);
+    n = n + 1;
+    printf(1, "Child 1 (after): n = %d\n", n);
+    if(fork()==0)
     {
-        printf(1,"Child: a = %d\n",a);
-        a = 2;
-        printf(1,"Child: a = %d\n",a);
+      printf(1, "Sub child (before): n = %d\n", n);
+      n = n + 1;
+      printf(1, "Sub child (after): n = %d\n", n);
+      if(fork()==0)
+      {
+        printf(1, "Sub sub child (before): n = %d\n", n);
+        n = n + 1;
+        printf(1, "Sub sub child (after): n = %d\n", n);
         exit();
+      }
+      printf(1, "Sub child Parent (before): n = %d\n", n);
+      n = n + 1;
+      printf(1, "Sub child Parent (after): n = %d\n", n);
+      wait();
+      exit();
     }
-    printf(1,"Parent: a = %d\n",a);
     wait();
-    printf(1,"Parent: a = %d\n",a);
     exit();
+  }
+  printf(1, "Parent (before): n = %d\n", n);
+  n = n + 1;
+  printf(1, "Parent (after): n = %d\n", n);
+  wait();
+  exit();
 }
