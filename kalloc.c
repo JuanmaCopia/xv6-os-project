@@ -15,13 +15,13 @@ extern char end[]; // first address after kernel loaded from ELF file
 
 struct run {
   struct run *next;
-  uint refcount;
 };
 
 struct {
   struct spinlock lock;
   int use_lock;
   struct run *freelist;
+  unsigned int cow_reference_count[PHYSTOP / PGSIZE];
 } kmem;
 
 // Initialization happens in two phases.
@@ -72,7 +72,7 @@ kfree(char *v)
     acquire(&kmem.lock);
   r = (struct run*)v;
   r->next = kmem.freelist;
-  r->refcount = 0;
+  kmem.cow_reference_count[(V2P(v) / PGSIZE)] = 0;
   kmem.freelist = r;
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -91,7 +91,7 @@ kalloc(void)
   r = kmem.freelist;
   if(r) {
     kmem.freelist = r->next;
-    r->refcount = 1;
+    kmem.cow_reference_count[(V2P(r) / PGSIZE)] = 1;
   }
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -101,13 +101,10 @@ kalloc(void)
 void
 incref(char *v)
 {
-  struct run *r;
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
 
-  r = (struct run*)v;
-  r->refcount += 1;
+  kmem.cow_reference_count[(V2P(v) / PGSIZE)] += 1;
 
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -116,13 +113,10 @@ incref(char *v)
 void
 decref(char *v)
 {
-  struct run *r;
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
 
-  r = (struct run*)v;
-  r->refcount -= 1;
+  kmem.cow_reference_count[(V2P(v) / PGSIZE)] -= 1;
 
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -131,10 +125,7 @@ decref(char *v)
 int
 refcount(char *v)
 {
-  struct run *r;
-
-  r = (struct run*)v;
-  return r->refcount;
+  return kmem.cow_reference_count[(V2P(v) / PGSIZE)];
 }
 
 

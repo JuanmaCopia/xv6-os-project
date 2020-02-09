@@ -349,6 +349,13 @@ bad:
   return 0;
 }
 
+// Flushes the Translation Lookaside buffer.
+void
+flushtlb()
+{
+  lcr3(V2P(myproc()->pgdir));
+}
+
 pde_t*
 cowuvm(pde_t *pgdir, uint sz)
 {
@@ -364,17 +371,16 @@ cowuvm(pde_t *pgdir, uint sz)
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
     // Clear Write Bit
-    *pte &= ~PTE_W;      
+    *pte &= ~PTE_W;    
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-
+    // Map parent page into child's
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
 
     incref(P2V(pa));
   }
-  // Flush TLB
-  lcr3(V2P(pgdir));
+  flushtlb();
   return d;
 
 bad:
@@ -395,6 +401,51 @@ uva2ka(pde_t *pgdir, char *uva)
   if((*pte & PTE_U) == 0)
     return 0;
   return (char*)P2V(PTE_ADDR(*pte));
+}
+
+void
+handlepgflt()
+{
+  pte_t *pte;
+  char *mem;
+  uint faultaddr, flags, pa;
+  char *gfa;
+
+  // Get the faulting virtual address.
+  faultaddr = rcr2();
+  // Obtain the start of the page that the faulty virtual address belongs to
+  gfa = (char*)PGROUNDDOWN((uint)faultaddr);
+  // fault is not for user address - kill process
+  if((pte = walkpgdir(myproc()->pgdir, gfa, 0)) == 0)
+    goto kill;
+
+  pa = PTE_ADDR(*pte);
+  flags = PTE_FLAGS(*pte);
+  char *v = P2V(pa);
+
+  if(refcount(v) > 1){
+    // allocate a new page
+    if((mem = kalloc()) == 0)
+      goto nomem;
+    memmove(mem, v, PGSIZE);
+    // Point the PTE pointer to the newly allocated page
+    *pte = V2P(mem) | flags | PTE_P | PTE_W;
+    decref(v);
+  }
+  else
+    *pte |= PTE_W;
+    
+  flushtlb();
+  return;
+
+kill:
+  cprintf("pid %d %s: Page fault: Invalid Address.\n", myproc()->pid, myproc()->name);
+  myproc()->killed = 1;
+  return;
+nomem:
+  cprintf("pid %d %s: No memory available.\n", myproc()->pid, myproc()->name);
+  myproc()->killed = 1;
+  return;
 }
 
 // Copy len bytes from p to user address va in page table pgdir.
